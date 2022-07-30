@@ -61,11 +61,20 @@ You will need to install the following locally:
 ## Monthly Cost Analysis
 Complete a month cost analysis of each Azure resource to give an estimate total cost using the table below:
 
-| Azure Resource | Service Tier | Monthly Cost |
-| ------------ | ------------ | ------------ |
-| *Azure Postgres Database* |     |              |
-| *Azure Service Bus*   |         |              |
-| ...                   |         |              |
+|      Azure Resource       | Service Tier   | Monthly Cost                          |
+| ------------------------  | ------------   | ------------                          |
+| *Azure Postgres Database* |    Basic       | $32.266/month                         |
+| *Azure Service Bus*       |    Basic       | $0.05 per million operations          |
+| *Azure App Service        |   Standard     | $69.35/month                          |
+| *Function App             |Consumption plan| $0.20 per million executions          |
+|                           |                |At an execution time of $0.000016/GB-s |
+| *Storage Account          |      Hot       |$0.021 per GB, First 50 terabyte/month |
+
 
 ## Architecture Explanation
 This is a placeholder section where you can provide an explanation and reasoning for your architecture selection for both the Azure Web App and Azure Function.
+
+explanation: 
+for the choice web app used, in order to solve the scalability issue, the Standrad tier is proferred, as it offers auto-scalable abilities, unlike the free and basic tiers.
+
+for the function app, the consumption plan is chosen as it is billed based on per-second resource consumption and executions, so for an application such as this that its use (registration of attendees) is only most likely going to be periodic/seasonal it is preferred as it charges only during instances of use. This is unlike the premium plan which requires that at least one instance must be allocated at all times per plan

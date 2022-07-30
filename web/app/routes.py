@@ -1,11 +1,12 @@
-from app import app, db, queue_client
+from app import app, db
 from datetime import datetime
 from app.models import Attendee, Conference, Notification
 from flask import render_template, session, request, redirect, url_for, flash, make_response, session
-from azure.servicebus import Message
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import logging
+from config import BaseConfig
 
 @app.route('/')
 def index():
@@ -67,24 +68,7 @@ def notification():
             db.session.add(notification)
             db.session.commit()
 
-            ##################################################
-            ## TODO: Refactor This logic into an Azure Function
-            ## Code below will be replaced by a message queue
-            #################################################
-            attendees = Attendee.query.all()
-
-            for attendee in attendees:
-                subject = '{}: {}'.format(attendee.first_name, notification.subject)
-                send_email(attendee.email, subject, notification.message)
-
-            notification.completed_date = datetime.utcnow()
-            notification.status = 'Notified {} attendees'.format(len(attendees))
-            db.session.commit()
-            # TODO Call servicebus queue_client to enqueue notification ID
-
-            #################################################
-            ## END of TODO
-            #################################################
+            send_to_queue(notification.id)
 
             return redirect('/Notifications')
         except :
@@ -105,3 +89,25 @@ def send_email(email, subject, body):
 
         sg = SendGridAPIClient(app.config.get('SENDGRID_API_KEY'))
         sg.send(message)
+
+
+def send_to_queue(message):
+    
+    try:
+
+        connString = BaseConfig.SERVICE_BUS_CONNECTION_STRING
+        queue_name = BaseConfig.SERVICE_BUS_QUEUE_NAME
+
+        
+        with ServiceBusClient.from_connection_string(connString) as queue_client:
+            with queue_client.get_queue_sender(queue_name) as sender:
+                msg = '{message}'.format(message=message)
+                message = ServiceBusMessage(msg)
+                sender.send_messages(message)
+                return 'ok'
+                                
+    except Exception as error:
+        logging.error(error)
+    
+    finally:
+        print("print start")
